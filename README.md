@@ -2,10 +2,15 @@
 
 
 
-frontend: react, clojurescript, rum, milligram
-
+front: react, clojurescript, rum, milligram  
+back: scala, playframework, slick  
 
 ## How to run
+
+```
+slick.dbs.default.db.user="postgres"
+slick.dbs.default.db.password="iddqd"
+```
 
 Start the Play app:
 
