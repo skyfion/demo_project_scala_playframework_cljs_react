@@ -1,15 +1,15 @@
 # BUG TRACK TEST APP
 
-
-
 front: react, clojurescript, rum, milligram  
 back: scala, playframework, slick  
 
 ## How to run
 
+postgres connect settings _conf/application.conf_
 ```
+slick.dbs.default.db.url="jdbc:postgresql://localhost/bug-tracker"
 slick.dbs.default.db.user="postgres"
-slick.dbs.default.db.password="iddqd"
+slick.dbs.default.db.password="****"
 ```
 
 Start the Play app:

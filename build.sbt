@@ -8,6 +8,8 @@ crossScalaVersions := Seq("2.11.12", "2.12.4")
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
+sourceDirectory in Compile := (baseDirectory( _ / "app" )).value
+
 libraryDependencies += guice
 
 //libraryDependencies ++= Seq(guice, evolutions, jdbc)
@@ -19,3 +21,6 @@ libraryDependencies ++= Seq(
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % "test",
   "org.postgresql" % "postgresql" % "9.4.1212"
 )
+
+libraryDependencies += "org.apache.lucene" % "lucene-core" % "7.2.0"
+libraryDependencies += "org.apache.lucene" % "lucene-queryparser" % "7.2.0"

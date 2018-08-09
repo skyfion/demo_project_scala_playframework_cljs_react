@@ -32,7 +32,8 @@ object BugTrackerTask {
     list.find(_.id == id).map(_.copy(status = status)).foreach(
       t => {
         delete(id)
-        list = list ::: List(t)}
+        list = list ::: List(t)
+      }
     )
   }
 
@@ -62,12 +63,12 @@ object BugTrackerTask {
       (JsPath \ "status").write[TaskStatus.Value]
     ) (unlift(BugTrackerTask.unapply))
 
-  implicit  val taskReads: Reads[BugTrackerTask] = (
+  implicit val taskReads: Reads[BugTrackerTask] = (
     (JsPath \ "id").read[Long] and
       (JsPath \ "name").read[String] and
       (JsPath \ "description").read[String] and
       (JsPath \ "status").read[TaskStatus.Value]
-  ) (BugTrackerTask.apply _)
+    ) (BugTrackerTask.apply _)
 }
 
 class TaskRepo @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
@@ -77,6 +78,7 @@ class TaskRepo @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
   val db = dbConfig.db
 
   import dbConfig.profile.api._
+
   private val tasks = TableQuery[TasksTable]
   implicit val taskStatusColumnType = MappedColumnType.base[TaskStatus.Value, String](
     _.toString, string => TaskStatus.withName(string))
@@ -99,7 +101,6 @@ class TaskRepo @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
     val q = for {t <- tasks if t.id === id} yield t.status
     db.run(q.update(value)).map(_ => ())
   }
-  //  def create(name: String, description: String, status: Status) todo
 
   private[models] class TasksTable(tag: Tag) extends Table[BugTrackerTask](tag, "task") {
 
@@ -116,3 +117,4 @@ class TaskRepo @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
   }
 
 }
+
