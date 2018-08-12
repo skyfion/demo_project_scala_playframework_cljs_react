@@ -11,11 +11,19 @@
                  [rum "0.11.2"]]
   :cljsbuild {
               :builds [{:id "main"
-                        ; The path to the top-level ClojureScript source directory:
                         :source-paths ["src/frontend/"]
-                        ; The standard ClojureScript compiler options:
-                        ; (See the ClojureScript compiler documentation for details.)
                         :compiler {
                                    :output-to "public/javascripts/main.js"
-                                   :optimizations :whitespace
-                                   :pretty-print true}}]})
+                                   :optimizations :advanced
+                                   :main "main"
+                                   :pretty-print false}}
+                       {:id "dev"
+                        :source-paths ["src/frontend/"]
+                        :compiler {
+                                   :output-to "public/javascripts/main.js"
+                                   :output-dir "public/javascripts"
+                                   :asset-path "assets/javascripts"
+                                   :optimizations :none
+                                   :pretty-print true
+                                   :main "main"
+                                   :source-map true}}]})
