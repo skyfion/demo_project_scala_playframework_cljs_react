@@ -20,5 +20,5 @@ libraryDependencies ++= Seq(
   "org.postgresql" % "postgresql" % "9.4.1212"
 )
 
-libraryDependencies += "org.apache.lucene" % "lucene-core" % "7.2.0"
-libraryDependencies += "org.apache.lucene" % "lucene-queryparser" % "7.2.0"
+libraryDependencies += "org.apache.lucene" % "lucene-core" % "7.3.0"
+libraryDependencies += "org.apache.lucene" % "lucene-queryparser" % "7.3.0"

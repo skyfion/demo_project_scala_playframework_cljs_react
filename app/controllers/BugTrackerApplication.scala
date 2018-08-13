@@ -1,10 +1,9 @@
 package controllers
 
-import com.sun.javafx.tk.Toolkit.Task
 import javax.inject.Inject
 import play.api.Logger
 import play.api.mvc._
-import models.{BugTrackerTask, TaskRepo, TaskStatus}
+import models.{BugTrackerTask, TaskRepo, TaskSearch, TaskStatus}
 
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.libs.json._
@@ -77,6 +76,12 @@ class BugTrackerApplication @Inject()(implicit ec: ExecutionContext, taskRepo: T
     })
   }
 
+  def search(term: String) = Action.async {
+    taskRepo.search(term).map(result => {
+      val json = Json.toJson(result)
+      Ok(json)
+    })
+  }
 }
 
 

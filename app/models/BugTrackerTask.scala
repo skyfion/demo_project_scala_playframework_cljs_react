@@ -54,6 +54,10 @@ class TaskRepo @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
   implicit val taskStatusColumnType = MappedColumnType.base[TaskStatus.Value, String](
     _.toString, string => TaskStatus.withName(string))
 
+  val indexSearcher = new TaskSearch()
+  // init index
+  all.map(indexSearcher.index)
+
   def all: Future[List[BugTrackerTask]] = db.run(tasks.sortBy(_.id).to[List].result)
 
   def delete(id: Long): Future[Unit] = {
@@ -71,6 +75,14 @@ class TaskRepo @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
   def changeStatus(id: Long, value: TaskStatus.Value) = {
     val q = for {t <- tasks if t.id === id} yield t.status
     db.run(q.update(value)).map(_ => ())
+  }
+
+  def filter(ids: Array[Long]): Future[List[BugTrackerTask]] = {
+    db.run(tasks.filter(_.id inSet ids.toSet).sortBy(_.id).to[List].result)
+  }
+
+  def search(term: String): Future[List[BugTrackerTask]] = {
+    filter(indexSearcher.search(term))
   }
 
   private[models] class TasksTable(tag: Tag) extends Table[BugTrackerTask](tag, "task") {
