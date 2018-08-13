@@ -3,14 +3,14 @@
 # ~~~~
 
 # Home page
-GET     /                            controllers.BugTrackerApplication.index
+GET     /                             controllers.BugTrackerApplication.index
 + nocsrf
-GET    /api/task/list                controllers.BugTrackerApplication.listTask
+GET    /api/task/list                 controllers.BugTrackerApplication.listTask
 + nocsrf
-POST    /api/task/new                controllers.BugTrackerApplication.newTask
+POST    /api/task/new                 controllers.BugTrackerApplication.newTask
 + nocsrf
-POST    /api/task/edit               controllers.BugTrackerApplication.editTask
-GET     /api/task/delete/:id         controllers.BugTrackerApplication.deleteTask(id: Long)
+POST    /api/task/edit                controllers.BugTrackerApplication.editTask
+GET     /api/task/delete/:id          controllers.BugTrackerApplication.deleteTask(id: Long)
 GET     /api/task/status/:id/:status  controllers.BugTrackerApplication.statusTask(id: Long, status: String)
 
 # Map static resources from the /public folder to the /assets URL path

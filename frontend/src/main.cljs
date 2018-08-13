@@ -95,10 +95,17 @@
                                                     )} "Save"]
         [:button.button.button-outline {:on-click close-modal} "Cancel"]]]]]))
 
+(defn confirm-delete [title f-ok]
+  (when (js/confirm title) (f-ok)))
 
 (rum/defc card-form < rum/reactive [card-ref]
   (let [card (first @card-ref)
-        {:keys [name description status]} card]
+        {:keys [name description status]} card
+        f-delete #(p/then (http/send! {:method :get
+                                       :url    (str (:delete-task urls) (:id card))})
+                          (fn [r]
+                            (js/console.log (str "delete " r))
+                            (task-update)))]
     [:div.card-form
      [:label (str "name: " name)]
      [:label (str "description: " description)]
@@ -113,12 +120,8 @@
       [:button.button.button-outline {:on-click (fn [_]
                                                   (swap! state assoc :edit-task card)
                                                   (swap! state assoc :modal? true))} "Edit"]
-      [:button.button.button-outline {:on-click (fn [_]
-                                                  (p/then (http/send! {:method :get
-                                                                       :url    (str (:delete-task urls) (:id card))})
-                                                          (fn [r]
-                                                            (js/console.log (str "delete " r))
-                                                            (task-update))))} "Delete"]]]))
+      [:button.button.button-outline {:on-click #(confirm-delete (str "Delete " (:name card) " task?") f-delete)}
+       "Delete"]]]))
 
 (rum/defc card < rum/reactive [card-ref]
   (let [card (first (rum/react card-ref))
@@ -129,6 +132,9 @@
      [:div.column {:id "todo"} (status? "todo")]
      [:div.column {:id "in_progress"} (status? "in_progress")]
      [:div.column {:id "done"} (status? "done")]]))
+
+
+
 
 (rum/defc app < rum/reactive
   []

@@ -8,8 +8,6 @@ crossScalaVersions := Seq("2.11.12", "2.12.4")
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
-sourceDirectory in Compile := (baseDirectory( _ / "app" )).value
-
 libraryDependencies += guice
 
 //libraryDependencies ++= Seq(guice, evolutions, jdbc)

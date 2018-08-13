@@ -23,35 +23,6 @@ object TaskStatus extends Enumeration {
 }
 
 object BugTrackerTask {
-  def edit(task: BugTrackerTask) = {
-
-  }
-
-
-  def changeStatus(id: Long, status: TaskStatus.Value) = {
-    list.find(_.id == id).map(_.copy(status = status)).foreach(
-      t => {
-        delete(id)
-        list = list ::: List(t)
-      }
-    )
-  }
-
-
-  var list: List[BugTrackerTask] = List(
-    BugTrackerTask(1L, "test 1", "desc 1", TaskStatus.todo),
-    BugTrackerTask(2L, "test 2", "desc 2", TaskStatus.in_progress),
-    BugTrackerTask(3L, "test 3", "desc 3", TaskStatus.done)
-  )
-
-  def delete(id: Long) = {
-    list = list.filter(_.id != id)
-  }
-
-  def save(task: BugTrackerTask): Unit = {
-    val id = list.map(task => task.id).max + 1
-    list = list ::: List(task.copy(id = id))
-  }
 
   implicit val taskStausReads = Reads.enumNameReads(TaskStatus)
   implicit val taskStausWrites: Writes[TaskStatus.Value] = Writes.enumNameWrites
