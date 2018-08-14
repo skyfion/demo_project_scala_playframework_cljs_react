@@ -1,6 +1,7 @@
 package models
 
 import javax.inject.Inject
+import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
@@ -61,15 +62,21 @@ class TaskRepo @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)
   def all: Future[List[BugTrackerTask]] = db.run(tasks.sortBy(_.id).to[List].result)
 
   def delete(id: Long): Future[Unit] = {
-    db.run(tasks.filter(_.id === id).delete).map(_ => ())
+    db.run(tasks.filter(_.id === id).delete)
+      .map(_ => indexSearcher.delete(id))
   }
 
   def update(task: BugTrackerTask) = {
-    db.run(tasks.filter(_.id === task.id).update(task)).map(_ => ())
+    db.run(tasks.filter(_.id === task.id).update(task))
+      .map(_ => indexSearcher.update(task))
   }
 
   def insert(task: BugTrackerTask) = {
-    db.run(tasks += task).map(_ => ())
+    db.run((tasks returning tasks.map(_.id)) += task)
+      .map(newId =>  {
+        Logger.info("id => " + newId.toString)
+        indexSearcher.add(task.copy(id = newId))
+      })
   }
 
   def changeStatus(id: Long, value: TaskStatus.Value) = {

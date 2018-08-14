@@ -2,7 +2,8 @@
   (:require [rum.core :as rum]
             [clojure.walk :as walk]
             [httpurr.client.xhr :as http]
-            [promesa.core :as p]))
+            [promesa.core :as p]
+            [clojure.string :as str]))
 
 ;; main app state
 (def state (atom nil))
@@ -11,6 +12,7 @@
 
 (def initial-state
   {:modal? false
+   :search-term ""
    :cards  []})                                             ;; group by id
 
 (def urls {:new-task      "/api/task/new"
@@ -37,8 +39,10 @@
   (map walk/keywordize-keys (js->clj (js/JSON.parse s))))
 
 (defn task-update []
-  (p/then (http/send! {:method :get
-                       :url    (:list-task urls)})
+  (p/then (http/send! {:method       :get
+                       :url          (:list-task urls)
+                       :query-params (when-not (str/blank? (:search-term @state))
+                                       {:search (:search-term @state)})})
           (fn [r] (when-let [body (:body r)]
                     (swap! state assoc :cards
                            (group-by :id (str-json->cljs-map body)))))))
@@ -133,9 +137,6 @@
      [:div.column {:id "in_progress"} (status? "in_progress")]
      [:div.column {:id "done"} (status? "done")]]))
 
-
-
-
 (rum/defc app < rum/reactive
   []
   (let [s (rum/react state)
@@ -145,11 +146,17 @@
      (when modal? (modal-form task-ref))
      [:div.row [:h3 "Bug tracker app"]]
      [:div.row
-      [:button.button.button-outline
-       {:on-click (fn [_]
-                    (swap! state assoc :edit-task default-task)
-                    (swap! state assoc :modal? true))}
-       "new task"]]
+      [:div.column.column-25
+       [:button.button.button-outline
+        {:on-click (fn [_]
+                     (swap! state assoc :edit-task default-task)
+                     (swap! state assoc :modal? true))}
+        "new task"]]
+      [:div.column.column-25.column-offset-25
+       [:input {:type      "text" :placeholder "search.. (ex., te?t test* te*t)"
+                :on-key-up #(if (= (.-keyCode %) 13) (task-update))
+                :on-change #(swap! state assoc :search-term (get-val %))}]]
+      [:div.column.column-25  [:button.button.button-outline {:on-click task-update} "search"]]]
      [:div.row
       [:div.column [:h5 "TODO"]]
       [:div.column [:h5 "IN PROGRESS"]]

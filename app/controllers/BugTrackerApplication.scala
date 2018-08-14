@@ -69,19 +69,21 @@ class BugTrackerApplication @Inject()(implicit ec: ExecutionContext, taskRepo: T
     }
   }
 
-  def listTask = Action.async {
-    taskRepo.all.map(all => {
-      val json = Json.toJson(all)
-      Ok(json)
-    })
+  def listTask(search: Option[String]) = Action.async {
+    if (search.nonEmpty) {
+      taskRepo.search(search.get).map(result => {
+        val json = Json.toJson(result)
+        Ok(json)
+      })
+    } else {
+      taskRepo.all.map(all => {
+        val json = Json.toJson(all)
+        Ok(json)
+      })
+    }
+
   }
 
-  def search(term: String) = Action.async {
-    taskRepo.search(term).map(result => {
-      val json = Json.toJson(result)
-      Ok(json)
-    })
-  }
 }
 
 

@@ -1,12 +1,17 @@
 package models
 
+import java.io.Closeable
+
 import org.apache.lucene.analysis.Analyzer
 import org.apache.lucene.analysis.standard.StandardAnalyzer
-import org.apache.lucene.document.{Document, Field, FieldType}
+import org.apache.lucene.document._
 import org.apache.lucene.index._
+import org.apache.lucene.queryparser.classic.QueryParser
 import org.apache.lucene.search.IndexSearcher
 import org.apache.lucene.store.RAMDirectory
-import org.apache.lucene.util.QueryBuilder
+
+import scala.util.control.NonFatal
+import scala.util.{Failure, Success, Try}
 
 class TaskSearch() {
   val MAX_RESULT = 10
@@ -16,40 +21,43 @@ class TaskSearch() {
 
   def docFromTask(task: BugTrackerTask): Document = {
     val doc = new Document()
-    // add description
-    val fieldType = new FieldType()
-    fieldType.setStored(true)
-    fieldType.setTokenized(true)
-    doc.add(new Field(INDEX_FIELD, task.description, fieldType))
-    // add id
-    val idFieldType = new FieldType()
-    idFieldType.setStored(true)
-    idFieldType.setTokenized(false)
-    idFieldType.setIndexOptions(IndexOptions.NONE)
-    doc.add(new Field("id", task.id.toString, idFieldType))
+    doc.add(new TextField(INDEX_FIELD, task.description, Field.Store.YES))
+    doc.add(new StringField("id", task.id.toString, Field.Store.YES))
     doc
   }
 
   def search(term: String): Array[Long] = {
-    val indexReader: DirectoryReader = _
-    try {
-      val indexReader = DirectoryReader.open(indexStory.store)
-      val indexSearcher = new IndexSearcher(indexReader)
-      val q = new QueryBuilder(analyzer).createPhraseQuery(INDEX_FIELD, term)
-      val topDocs = indexSearcher.search(q, MAX_RESULT)
-      topDocs.scoreDocs.map(d => {
-        indexSearcher.doc(d.doc).get("id").toLong
-      })
-    } finally {
-      indexReader.close()
+
+    val res = TryWith(DirectoryReader.open(indexStory.store)) {
+      indexReader => {
+        val indexSearcher = new IndexSearcher(indexReader.asInstanceOf[DirectoryReader])
+        val qp = new QueryParser(INDEX_FIELD, analyzer)
+        val topDocs = indexSearcher.search(qp.parse(term), MAX_RESULT)
+        topDocs.scoreDocs.map(d => {
+          indexSearcher.doc(d.doc).get("id").toLong
+        })
+      }
+    }
+
+    res match {
+      case Success(result) => result
+      case Failure(e) =>
+        e.printStackTrace()
+        Array()
     }
   }
+
   // init
   def index(tasks: List[BugTrackerTask]): Unit = {
-    indexStory.addTasks(tasks)
+    indexStory.initTasks(tasks)
+  }
+
+  def add(task: BugTrackerTask): Unit = {
+    indexStory.addTasks(task)
   }
 
   def update(task: BugTrackerTask): Unit = {
+    println("update")
     indexStory.update(task)
   }
 
@@ -61,38 +69,67 @@ class TaskSearch() {
 class TaskSearchIndexStore(analyzer: Analyzer, toDocFun: Function[BugTrackerTask, Document]) {
   val store = new RAMDirectory()
 
-  def addTasks(tasks: List[BugTrackerTask]): Unit = {
-    val writer: IndexWriter = _
-    try {
-      val writer = new IndexWriter(store, new IndexWriterConfig(analyzer))
-      tasks.foreach(task => writer.addDocument(toDocFun(task)))
-    } finally {
-      writer.close()
-    }
+  def initTasks(tasks: List[BugTrackerTask]): Unit = {
+    val defWriterConfig = new IndexWriterConfig(analyzer)
+    defWriterConfig.setOpenMode(IndexWriterConfig.OpenMode.CREATE)
+    defWriterConfig.setCommitOnClose(true)
+    TryWith(new IndexWriter(store, defWriterConfig))(writer => {
+      tasks.foreach(task => writer.asInstanceOf[IndexWriter].addDocument(toDocFun(task)))
+    })
+  }
+
+  def addTasks(task: BugTrackerTask): Unit = {
+    val writerConfig = new IndexWriterConfig(analyzer)
+    writerConfig.setOpenMode(IndexWriterConfig.OpenMode.APPEND)
+
+    TryWith(new IndexWriter(store, writerConfig))(writer => {
+      writer.asInstanceOf[IndexWriter].addDocument(toDocFun(task))
+    })
   }
 
   def update(task: BugTrackerTask): Unit = {
-    val writer: IndexWriter = _
-    try {
-      writer.updateDocument(
+    val writerConfig = new IndexWriterConfig(analyzer)
+    writerConfig.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND)
+    writerConfig.setCommitOnClose(true)
+    TryWith(new IndexWriter(store, writerConfig))(writer => {
+      writer.asInstanceOf[IndexWriter].updateDocument(
         new Term("id", task.id.toString),
         toDocFun(task)
       )
-    } finally {
-      writer.close()
-    }
+    })
   }
 
   def delete(id: Long): Unit = {
-    val writer: IndexWriter = _
-    try {
-      writer.deleteDocuments(new Term("id", id.toString))
-    } finally {
-      writer.close()
-    }
+    val writerConfig = new IndexWriterConfig(analyzer)
+    writerConfig.setOpenMode(IndexWriterConfig.OpenMode.APPEND)
+    writerConfig.setCommitOnClose(true)
+    TryWith(new IndexWriter(store, writerConfig))(writer => {
+      writer.asInstanceOf[IndexWriter].deleteDocuments(new Term("id", id.toString))
+    })
   }
 
+}
 
+object TryWith {
+  def apply[C <: Closeable, R](resGen: => C)(r: Closeable => R): Try[R] =
+    Try(resGen).flatMap(closeable => {
+      try {
+        Success(r(closeable))
+      }
+      catch {
+        case NonFatal(e) => Failure(e)
+      }
+      finally {
+        try {
+          closeable.close()
+        }
+        catch {
+          case e: Exception =>
+            System.err.println("Failed to close Resource:")
+            e.printStackTrace()
+        }
+      }
+    })
 }
 
 

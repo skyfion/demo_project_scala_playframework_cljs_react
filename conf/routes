@@ -5,7 +5,7 @@
 # Home page
 GET     /                             controllers.BugTrackerApplication.index
 + nocsrf
-GET    /api/task/list                 controllers.BugTrackerApplication.listTask
+GET    /api/task/list                 controllers.BugTrackerApplication.listTask(search: Option[String])
 + nocsrf
 POST    /api/task/new                 controllers.BugTrackerApplication.newTask
 + nocsrf
