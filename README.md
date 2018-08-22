@@ -1,7 +1,7 @@
 # BUG TRACK TEST APP
 
 front: react, clojurescript, rum, milligram  
-back: scala, playframework, slick  
+back: scala, playframework, slick, lucene  
 
 ## How to run
 
@@ -19,6 +19,9 @@ sbt run
 ```
 
 And open [http://localhost:9000/](http://localhost:9000/)
+
+
+![](https://raw.githubusercontent.com/skyfion/demo_project_scala_playframework_cljs_react/master/demo.gif)
 
 
 
