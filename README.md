@@ -1,4 +1,4 @@
-# BUG TRACK TEST APP
+# DEMO APP (simple bug tracker)
 
 front: react, clojurescript, rum, milligram  
 back: scala, playframework, slick, lucene  
